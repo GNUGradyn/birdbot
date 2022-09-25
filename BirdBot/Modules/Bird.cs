@@ -38,6 +38,11 @@ public class Bird : InteractionModuleBase<SocketInteractionContext>
         {
             await message.Channel.SendMessageAsync("Æ");
         }
+
+        if (message.Author.Id == 557643831156408371)
+        {
+            await message.Channel.SendMessageAsync("a");
+        }
     }
 
     [SlashCommand("bird", "bird")]
