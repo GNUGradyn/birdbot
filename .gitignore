@@ -1,0 +1,5 @@
+.idea
+.vs
+BirdBot/bin
+BirdBot/obj
+BirdBot/appsettings.json
