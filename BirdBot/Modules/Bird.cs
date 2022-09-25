@@ -29,7 +29,7 @@ public class Bird : InteractionModuleBase<SocketInteractionContext>
             await message.DeleteAsync();
         }
 
-        if (message.Content.ToLower().Contains("bird"))
+        if (CheckWordlist(message.Content, new List<string> {"bird", "burb", "birb"}))
         {
             await message.Channel.SendMessageAsync("a");
         }
@@ -45,5 +45,15 @@ public class Bird : InteractionModuleBase<SocketInteractionContext>
     {
         var bird = random.Next(birds.Length);
         await RespondWithFileAsync(birds[bird]);
+    }
+
+    private bool CheckWordlist(string input, IEnumerable<string> wordlist)
+    {
+        foreach (var word in wordlist)
+        {
+            if (input.ToLower().Contains(word)) return true;
+        }
+
+        return false;
     }
 }
