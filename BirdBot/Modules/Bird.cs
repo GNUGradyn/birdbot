@@ -37,7 +37,7 @@ public class Bird : InteractionModuleBase<SocketInteractionContext>
         if (message.Content.ToLower().Contains("fugl"))
         {
             await message.Channel.SendMessageAsync("Æ");
-        }i 
+        }
     }
 
     [SlashCommand("bird", "bird")]
