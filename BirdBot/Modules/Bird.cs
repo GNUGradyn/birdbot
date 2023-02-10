@@ -18,8 +18,10 @@ public class Bird : InteractionModuleBase<SocketInteractionContext>
         _config = config;
         _client.MessageReceived += OnMessageAsync;
         voidId = _config.GetValue<ulong>("VoidId");
-        var birdsBasePath = config.GetValue<string>("BirdsPath");
-        birds = Directory.GetFiles(birdsBasePath).Select(x => Path.Combine(birdsBasePath, x)).ToArray();
+        if (!string.IsNullOrEmpty(config.GetValue<string>("BirdsPath"))) {
+            var birdsBasePath = config.GetValue<string>("BirdsPath");
+            birds = Directory.GetFiles(birdsBasePath).Select(x => Path.Combine(birdsBasePath, x)).ToArray();
+        }
     }
 
     public async Task OnMessageAsync(SocketMessage message)
