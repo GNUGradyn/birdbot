@@ -8,7 +8,7 @@ public class Bird : InteractionModuleBase<SocketInteractionContext>
 {
     private readonly DiscordSocketClient _client;
     private readonly IConfiguration _config;
-    private readonly ulong voidId;
+    private readonly ulong[] voidIds;
     private readonly string[] birds;
     private static Random random = new Random();
 
@@ -17,7 +17,7 @@ public class Bird : InteractionModuleBase<SocketInteractionContext>
         _client = client;
         _config = config;
         _client.MessageReceived += OnMessageAsync;
-        voidId = _config.GetValue<ulong>("VoidId");
+        voidIds = _config.GetSection("VoidIds").Get<ulong[]>();
         if (!string.IsNullOrEmpty(config.GetValue<string>("BirdsPath"))) {
             var birdsBasePath = config.GetValue<string>("BirdsPath");
             birds = Directory.GetFiles(birdsBasePath).Select(x => Path.Combine(birdsBasePath, x)).ToArray();
@@ -26,7 +26,7 @@ public class Bird : InteractionModuleBase<SocketInteractionContext>
 
     public async Task OnMessageAsync(SocketMessage message)
     {
-        if (message.Channel.Id == voidId)
+        if (voidIds.Contains(message.Channel.Id))
         {
             await message.DeleteAsync();
         }
