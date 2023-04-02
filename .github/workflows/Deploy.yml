@@ -32,10 +32,7 @@ jobs:
           push: true
           tags: ${{ secrets.REGISTRY_ADDRESS }}/birdbot:latest
       - name: Deploy to HBI Server
-        uses: appleboy/ssh-action@v0.1.8
+        uses: fjogeleit/http-request-action@v1
         with:
-          host: ${{ secrets.HOST }}
-          username: ${{ secrets.USERNAME }}
-          key: ${{ secrets.KEY }}
-          port: ${{ secrets.PORT }}
-          script: ${{ secrets.SCRIPT }}
+          url: ${{ secrets.WEBHOOK }}
+          method: 'POST'
