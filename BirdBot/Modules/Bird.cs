@@ -1,4 +1,5 @@
-﻿using Discord.Interactions;
+﻿using Discord;
+using Discord.Interactions;
 using Discord.WebSocket;
 using Microsoft.Extensions.Configuration;
 
@@ -17,11 +18,34 @@ public class Bird : InteractionModuleBase<SocketInteractionContext>
         _client = client;
         _config = config;
         _client.MessageReceived += OnMessageAsync;
+        client.Ready += ReadyAsync;
+        client.UserVoiceStateUpdated += UserVoiceStateUpdatedAsync;
         voidIds = _config.GetSection("VoidIds").Get<ulong[]>();
         if (!string.IsNullOrEmpty(config.GetValue<string>("BirdsPath"))) {
             var birdsBasePath = config.GetValue<string>("BirdsPath");
             birds = Directory.GetFiles(birdsBasePath).Select(x => Path.Combine(birdsBasePath, x)).ToArray();
         }
+    }
+
+    public async Task UserVoiceStateUpdatedAsync(SocketUser socketUser, SocketVoiceState currentState, SocketVoiceState nextState)
+    {
+        if (nextState.VoiceChannel.Id == 801249696571850762)
+        {
+            await nextState.VoiceChannel.GetUser(socketUser.Id).ModifyAsync(x => x.Mute = true);
+        }
+        
+        if (nextState.VoiceChannel == null || nextState.VoiceChannel.Id != 801249696571850762)
+        {
+            await nextState.VoiceChannel.GetUser(socketUser.Id).ModifyAsync(x => x.Mute = false);
+        }
+    }
+    
+    
+    public async Task ReadyAsync()
+    {
+        // var user = _client.GetUser(310241454603763713);
+        // await user.SendMessageAsync("im going to shit on your car");
+        // Console.WriteLine("done");
     }
 
     public async Task OnMessageAsync(SocketMessage message)
