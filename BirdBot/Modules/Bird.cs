@@ -31,11 +31,13 @@ public class Bird : InteractionModuleBase<SocketInteractionContext>
     {
         if (nextState.VoiceChannel.Id == 801249696571850762)
         {
+            if (nextState.IsMuted) return;
             await nextState.VoiceChannel.GetUser(socketUser.Id).ModifyAsync(x => x.Mute = true);
         }
         
         if (nextState.VoiceChannel == null || nextState.VoiceChannel.Id != 801249696571850762)
         {
+            if (!nextState.IsMuted) return;
             await nextState.VoiceChannel.GetUser(socketUser.Id).ModifyAsync(x => x.Mute = false);
         }
     }
