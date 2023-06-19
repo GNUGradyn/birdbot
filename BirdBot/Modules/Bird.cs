@@ -21,28 +21,30 @@ public class Bird : InteractionModuleBase<SocketInteractionContext>
         client.Ready += ReadyAsync;
         client.UserVoiceStateUpdated += UserVoiceStateUpdatedAsync;
         voidIds = _config.GetSection("VoidIds").Get<ulong[]>();
-        if (!string.IsNullOrEmpty(config.GetValue<string>("BirdsPath"))) {
+        if (!string.IsNullOrEmpty(config.GetValue<string>("BirdsPath")))
+        {
             var birdsBasePath = config.GetValue<string>("BirdsPath");
             birds = Directory.GetFiles(birdsBasePath).Select(x => Path.Combine(birdsBasePath, x)).ToArray();
         }
     }
 
-    public async Task UserVoiceStateUpdatedAsync(SocketUser socketUser, SocketVoiceState currentState, SocketVoiceState nextState)
+    public async Task UserVoiceStateUpdatedAsync(SocketUser socketUser, SocketVoiceState currentState,
+        SocketVoiceState nextState)
     {
         if (nextState.VoiceChannel.Id == 801249696571850762)
         {
             if (nextState.IsMuted) return;
             await nextState.VoiceChannel.GetUser(socketUser.Id).ModifyAsync(x => x.Mute = true);
         }
-        
+
         if (nextState.VoiceChannel == null || nextState.VoiceChannel.Id != 801249696571850762)
         {
             if (!nextState.IsMuted) return;
             await nextState.VoiceChannel.GetUser(socketUser.Id).ModifyAsync(x => x.Mute = false);
         }
     }
-    
-    
+
+
     public async Task ReadyAsync()
     {
         // var user = _client.GetUser(310241454603763713);
@@ -57,7 +59,7 @@ public class Bird : InteractionModuleBase<SocketInteractionContext>
             await message.DeleteAsync();
         }
 
-        if (CheckWordlist(message.Content, new List<string> {"bird", "burb", "birb"}))
+        if (CheckWordlist(message.Content, new List<string> { "bird", "burb", "birb" }))
         {
             await message.Channel.SendMessageAsync("a");
         }
@@ -66,22 +68,25 @@ public class Bird : InteractionModuleBase<SocketInteractionContext>
         {
             await message.Channel.SendMessageAsync("Æ");
         }
+
+        if (message.Channel is IVoiceChannel && ((IVoiceChannel)message.Channel).GuildId == 595687467827462144)
+            await message.DeleteAsync();
     }
 
     [SlashCommand("bird", "bird")]
-    public async Task BirdAsync()
-    {
-        var bird = random.Next(birds.Length);
-        await RespondWithFileAsync(birds[bird]);
-    }
-
-    private bool CheckWordlist(string input, IEnumerable<string> wordlist)
-    {
-        foreach (var word in wordlist)
+        public async Task BirdAsync()
         {
-            if (input.ToLower().Contains(word)) return true;
+            var bird = random.Next(birds.Length);
+            await RespondWithFileAsync(birds[bird]);
         }
 
-        return false;
+        private bool CheckWordlist(string input, IEnumerable<string> wordlist)
+        {
+            foreach (var word in wordlist)
+            {
+                if (input.ToLower().Contains(word)) return true;
+            }
+
+            return false;
+        }
     }
-}
