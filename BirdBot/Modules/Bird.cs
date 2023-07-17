@@ -71,6 +71,11 @@ public class Bird : InteractionModuleBase<SocketInteractionContext>
 
         if (message.Channel is IVoiceChannel && ((IVoiceChannel)message.Channel).GuildId == 595687467827462144)
             await message.DeleteAsync();
+
+        if (message.Channel.Id == 595999302334021632 && message.Attachments.Any())
+        {
+            await message.AddReactionAsync(Emote.Parse("<:upvote:1130557003698290708>"));
+        }
     }
 
     [SlashCommand("bird", "bird")]
