@@ -2,6 +2,7 @@
 using Discord;
 using Discord.Interactions;
 using Discord.WebSocket;
+using Goatbot.Data;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -38,6 +39,7 @@ public class Program
             .AddSingleton(_socketConfig)
             .AddSingleton(_client)
             .AddSingleton(x => new InteractionService(x.GetRequiredService<DiscordSocketClient>()))
+            .AddDbContext<BirdDbContext>()
             .BuildServiceProvider();
         await _client.LoginAsync(TokenType.Bot, _config.GetValue<string>("Token"));
         await _handler.AddModulesAsync(Assembly.GetEntryAssembly(), _services); // Add modules
