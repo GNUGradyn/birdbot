@@ -17,6 +17,9 @@ public class Bird : InteractionModuleBase<SocketInteractionContext>
     private readonly BirdDbContext _db;
     private static Random random = new Random();
 
+    private IGuildUser grandon;
+    private IGuild hbi;
+
     public Bird(DiscordSocketClient client, IConfiguration config, BirdDbContext db)
     {
         _client = client;
@@ -35,7 +38,8 @@ public class Bird : InteractionModuleBase<SocketInteractionContext>
         }
     }
 
-    public async Task ReactionRemovedAsync(Cacheable<IUserMessage, ulong> messageCacheable, Cacheable<IMessageChannel, ulong> channelCacheable, SocketReaction reaction)
+    public async Task ReactionRemovedAsync(Cacheable<IUserMessage, ulong> messageCacheable,
+        Cacheable<IMessageChannel, ulong> channelCacheable, SocketReaction reaction)
     {
         var message = await messageCacheable.GetOrDownloadAsync();
         if (channelCacheable.Id == 595999302334021632 && message.Attachments.Any() &&
@@ -47,8 +51,9 @@ public class Bird : InteractionModuleBase<SocketInteractionContext>
             await _db.SaveChangesAsync();
         }
     }
-    
-    public async Task ReactionAddedAsync(Cacheable<IUserMessage, ulong> messageCacheable, Cacheable<IMessageChannel, ulong> channelCacheable, SocketReaction reaction)
+
+    public async Task ReactionAddedAsync(Cacheable<IUserMessage, ulong> messageCacheable,
+        Cacheable<IMessageChannel, ulong> channelCacheable, SocketReaction reaction)
     {
         var message = await messageCacheable.GetOrDownloadAsync();
         if (channelCacheable.Id == 595999302334021632 && message.Attachments.Any() &&
@@ -83,12 +88,12 @@ public class Bird : InteractionModuleBase<SocketInteractionContext>
                     {
                         Console.WriteLine(ex.ToString());
                     }
-                    
+
                 }
             }
         }
     }
-    
+
     public async Task UserVoiceStateUpdatedAsync(SocketUser socketUser, SocketVoiceState currentState,
         SocketVoiceState nextState)
     {
@@ -111,9 +116,25 @@ public class Bird : InteractionModuleBase<SocketInteractionContext>
         // var user = _client.GetUser(310241454603763713);
         // await user.SendMessageAsync("im going to shit on your car");
         // Console.WriteLine("done");
+
+        hbi = _client.GetGuild(595687467827462144);
+        grandon = await hbi.GetUserAsync(269605239756161025);
+
+        await Task.Run(WhatShouldIcallThisGoddamnMethodIDontKnowLol);
     }
 
-    public async Task OnMessageAsync(SocketMessage message)
+    public async Task WhatShouldIcallThisGoddamnMethodIDontKnowLol()
+    {
+        while (true)
+        {
+            var lines = await File.ReadAllLinesAsync("g.txt");
+            var randomLineNumber = random.Next(0, lines.Length - 1);
+            await grandon.ModifyAsync(x => x.Nickname = lines[randomLineNumber]);
+            await Task.Delay(86400000);
+        }
+    }
+
+public async Task OnMessageAsync(SocketMessage message)
     {
         if (voidIds.Contains(message.Channel.Id))
         {
