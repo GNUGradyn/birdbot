@@ -101,12 +101,20 @@ public class Bird : InteractionModuleBase<SocketInteractionContext>
         {
             if (nextState.IsMuted) return;
             await nextState.VoiceChannel.GetUser(socketUser.Id).ModifyAsync(x => x.Mute = true);
+            await _db.VoidMutes.AddAsync(new VoidMutes
+            {
+                UserId = socketUser.Id
+            });
+            await _db.SaveChangesAsync();
         }
 
         if (nextState.VoiceChannel == null || nextState.VoiceChannel.Id != 801249696571850762)
         {
             if (!nextState.IsMuted) return;
+            var mutes = await _db.VoidMutes.Where(x => x.UserId == socketUser.Id).ToListAsync();
+            if (mutes.Count == 0) return;
             await nextState.VoiceChannel.GetUser(socketUser.Id).ModifyAsync(x => x.Mute = false);
+            _db.VoidMutes.RemoveRange(mutes);
         }
     }
 

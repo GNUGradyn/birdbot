@@ -9,6 +9,7 @@ public class BirdDbContext : DbContext
     private IConfiguration _config;
 
     public DbSet<Upvotes> Upvotes { get; set; }
+    public DbSet<VoidMutes> VoidMutes { get; set; }
     
     public BirdDbContext(IConfiguration config)
     {
