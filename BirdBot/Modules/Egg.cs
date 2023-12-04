@@ -64,7 +64,7 @@ public class Egg : InteractionModuleBase<SocketInteractionContext>
     {
         if (cmd.CommandName == "egg")
         {
-            await cmd.RespondAsync("Aight please hold on the line while i lay some eggs");
+            await cmd.RespondAsync("Aight please hold on the line while i lay some eggs", ephemeral: true);
             await Task.WhenAll(eggs.Select(x => cmd.Data.Message.AddReactionAsync(Emote.Parse(x))));
             await cmd.ModifyOriginalResponseAsync(properties => properties.Content = "That should do it boss");
         }
