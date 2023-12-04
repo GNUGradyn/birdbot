@@ -128,7 +128,7 @@ public class Bird : InteractionModuleBase<SocketInteractionContext>
         hbi = _client.GetGuild(595687467827462144);
         grandon = await hbi.GetUserAsync(269605239756161025);
 
-        await Task.Run(WhatShouldIcallThisGoddamnMethodIDontKnowLol);
+        Task.Run(WhatShouldIcallThisGoddamnMethodIDontKnowLol);
     }
 
     public async Task WhatShouldIcallThisGoddamnMethodIDontKnowLol()
