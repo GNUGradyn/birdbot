@@ -3,6 +3,7 @@ using Discord;
 using Discord.Interactions;
 using Discord.WebSocket;
 using Goatbot.Data;
+using Goatbot.Modules;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -45,6 +46,8 @@ public class Program
         await _handler.AddModulesAsync(Assembly.GetEntryAssembly(), _services); // Add modules
         _client.InteractionCreated += HandleInteraction; // add interaction handler
         await _client.StartAsync();
+
+        Ravioli.RavioliRavioliWhatsInThePocketoli(_client);
 
         await Task.Delay(Timeout.Infinite);
     }
