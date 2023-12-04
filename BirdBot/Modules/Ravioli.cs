@@ -44,7 +44,7 @@ namespace Goatbot.Modules
 
             var message  = Text[Rand.Next(Text.Length - 1)];
             var guild = _client.GetGuild(595687467827462144);
-            var ch = guild.GetTextChannel(642613389583056897);
+            var ch = guild.GetTextChannel(595699949581369355);
 
             await ch.SendMessageAsync(message);
 
