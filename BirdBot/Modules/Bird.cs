@@ -3,6 +3,7 @@ using Discord.Interactions;
 using Discord.WebSocket;
 using Goatbot.Data;
 using Goatbot.Data.Models;
+using Goatbot.Extensions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 
@@ -88,15 +89,29 @@ public class Bird : InteractionModuleBase<SocketInteractionContext>
                     {
                         Console.WriteLine(ex.ToString());
                     }
-
                 }
             }
         }
     }
 
+
     public async Task UserVoiceStateUpdatedAsync(SocketUser socketUser, SocketVoiceState currentState,
         SocketVoiceState nextState)
     {
+        // soundboard stuff
+        var channels = await hbi.GetChannelsAsync();
+        var max = channels.Where(x => x.GetType() == typeof(SocketVoiceChannel))
+            .MaxBy(x => ((SocketVoiceChannel)x).ConnectedUsers.Count);
+        var channel = (await hbi.GetCurrentUserAsync()).VoiceChannel;
+        if (max == null)
+        {
+            if (channel != null) await channel.DisconnectAsync();
+        }
+        else
+        {
+            await channel.ConnectAsync();
+        }
+
         if (nextState.VoiceChannel.Id == 801249696571850762)
         {
             if (nextState.IsMuted) return;
@@ -135,14 +150,12 @@ public class Bird : InteractionModuleBase<SocketInteractionContext>
     {
         while (true)
         {
-            var lines = await File.ReadAllLinesAsync("g.txt");
-            var randomLineNumber = random.Next(0, lines.Length - 1);
-            await grandon.ModifyAsync(x => x.Nickname = lines[randomLineNumber]);
+            await grandon.ModifyAsync(x => x.Nickname = _db.Gs.OrderBy(y => EF.Functions.Random()).Take(1).ToList()[0].Word.FirstCharToUpper());
             await Task.Delay(86400000);
         }
     }
 
-public async Task OnMessageAsync(SocketMessage message)
+    public async Task OnMessageAsync(SocketMessage message)
     {
         if (voidIds.Contains(message.Channel.Id))
         {
@@ -162,40 +175,62 @@ public async Task OnMessageAsync(SocketMessage message)
         if (message.Channel is IVoiceChannel && ((IVoiceChannel)message.Channel).GuildId == 595687467827462144)
             await message.DeleteAsync();
 
-        if (message.Channel.Id == 595999302334021632 && (message.Attachments.Any() || message.Content.Contains("https://") || message.Content.Contains("http://")))
+        if (message.Channel.Id == 595999302334021632 && (message.Attachments.Any() ||
+                                                         message.Content.Contains("https://") ||
+                                                         message.Content.Contains("http://")))
         {
             await message.AddReactionAsync(Emote.Parse("<:upvote:1130557003698290708>"));
         }
     }
 
     [SlashCommand("bird", "bird")]
-        public async Task BirdAsync()
-        {
-            var bird = random.Next(birds.Length);
-            await RespondWithFileAsync(birds[bird]);
-        }
-
-        private bool CheckWordlist(string input, IEnumerable<string> wordlist)
-        {
-            foreach (var word in wordlist)
-            {
-                if (input.ToLower().Contains(word)) return true;
-            }
-
-            return false;
-        }
-
-        [SlashCommand("memes", "get the memes leaderboard")]
-        public async Task MemesAsync()
-        {
-            EmbedBuilder builder = new EmbedBuilder();
-            builder.WithTitle("Meme Leaderboard");
-            await _db.Upvotes.OrderByDescending(x => x.Count)
-                .ForEachAsync(async x =>
-                {
-                    var user = await _client.GetUserAsync(x.User);
-                    builder.AddField(user.Username, x.Count.ToString());
-                });
-            await RespondAsync(embed: builder.Build());
-        }
+    public async Task BirdAsync()
+    {
+        var bird = random.Next(birds.Length);
+        await RespondWithFileAsync(birds[bird]);
     }
+
+    [SlashCommand("g", "g")]
+    public async Task GAsync(string word)
+    {
+        if (!word.StartsWith("g") && !word.StartsWith("G"))
+        {
+            await RespondAsync("Must start with g dumbass");
+            return;
+        }
+
+        if (_db.Gs.Any(x => x.Word == word.ToLower()))
+        {
+            await RespondAsync("I already have that one tho");
+            return;
+        }
+
+        await _db.Gs.AddAsync(new g { Word = word.ToLower() });
+        await _db.SaveChangesAsync();
+        await RespondAsync("k");
+    }
+    
+    private bool CheckWordlist(string input, IEnumerable<string> wordlist)
+    {
+        foreach (var word in wordlist)
+        {
+            if (input.ToLower().Contains(word)) return true;
+        }
+
+        return false;
+    }
+
+    [SlashCommand("memes", "get the memes leaderboard")]
+    public async Task MemesAsync()
+    {
+        EmbedBuilder builder = new EmbedBuilder();
+        builder.WithTitle("Meme Leaderboard");
+        await _db.Upvotes.OrderByDescending(x => x.Count)
+            .ForEachAsync(async x =>
+            {
+                var user = await _client.GetUserAsync(x.User);
+                builder.AddField(user.Username, x.Count.ToString());
+            });
+        await RespondAsync(embed: builder.Build());
+    }
+}
