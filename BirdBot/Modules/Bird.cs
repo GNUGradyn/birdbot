@@ -122,7 +122,20 @@ public class Bird : InteractionModuleBase<SocketInteractionContext>
 
         if (CheckWordlist(message.Content, new List<string> { "bird", "burb", "birb" }))
         {
-            await message.Channel.SendMessageAsync("a");
+            if (random.Next(100) == 69)
+            {
+                await message.Channel.SendMessageAsync("bcdefghijklmnopqurstuvwxyz".ToCharArray()[random.Next(25)].ToString());
+                await Task.Delay(1000);
+                await message.Channel.SendMessageAsync("I mean");
+                await Task.Delay(500);
+                await message.Channel.SendMessageAsync("fuck");
+                await Task.Delay(500);
+                await message.Channel.SendMessageAsync("a");
+            }
+            else
+            {
+                await message.Channel.SendMessageAsync("a");
+            }
         }
 
         if (message.Content.ToLower().Contains("fugl"))
