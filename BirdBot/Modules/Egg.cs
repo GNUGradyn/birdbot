@@ -8,6 +8,8 @@ namespace Goatbot.Modules;
 
 public class Egg : InteractionModuleBase<SocketInteractionContext>
 {
+    private readonly InteractionService _handler;
+    
     private readonly string[] eggs = new[]
     {
         "<:egg1:1181038948940796064>", 
@@ -38,25 +40,16 @@ public class Egg : InteractionModuleBase<SocketInteractionContext>
     {
         _client = client;
         client.MessageCommandExecuted += MessageCommandHandler;
-        client.Ready += ReadyAsync;
-        client.UserCommandExecuted += UserCommandHandler;
-    }
+        client.Ready += ReadyAsync; }
 
     public async Task ReadyAsync()
     {
         var egg = new MessageCommandBuilder();
         egg.WithName("egg");
 
-        var impersonate = new UserCommandBuilder();
-        impersonate.WithName("Impersonate");
-
         try
         {
-            await _client.BulkOverwriteGlobalApplicationCommandsAsync(new ApplicationCommandProperties[]
-            {
-                egg.Build(),
-                impersonate.Build()
-            });
+            //await _client.CreateGlobalApplicationCommandAsync(egg.Build());
         }    
         catch(ApplicationCommandException exception)
         {
@@ -72,17 +65,6 @@ public class Egg : InteractionModuleBase<SocketInteractionContext>
             await cmd.RespondAsync("Aight please hold on the line while i lay some eggs", ephemeral: true);
             await Task.WhenAll(eggs.Select(x => cmd.Data.Message.AddReactionAsync(Emote.Parse(x))));
             await cmd.ModifyOriginalResponseAsync(properties => properties.Content = "That should do it boss");
-        }
-    }
-    
-    public async Task UserCommandHandler(SocketUserCommand cmd)
-    {
-        if (cmd.CommandName == "impersonate")
-        {
-            var modal = new ModalBuilder().WithTitle("Impersonation menu")
-                .AddTextInput("What should I say?", "body", TextInputStyle.Paragraph, "my mom gae")
-                .AddTextInput("Where da fuk (channel ID, leave empty for general)", "channel", TextInputStyle.Paragraph, "1234567890");
-            await RespondWithModalAsync(modal.Build());
         }
     }
 }
