@@ -194,7 +194,12 @@ public class Bird : InteractionModuleBase<SocketInteractionContext>
         {
             await message.AddReactionAsync(Emote.Parse("<:upvote:1130557003698290708>"));
         }
-    }
+
+        if (message.Content.ToLower().Contains("car"))
+        {
+            await message.AddReactionAsync(new Emoji("\uD83D\uDCA9"));
+        }
+     }
 
     [SlashCommand("bird", "bird")]
     public async Task BirdAsync()
