@@ -109,7 +109,7 @@ public class Bird : InteractionModuleBase<SocketInteractionContext>
         }
         else
         {
-            await channel.ConnectAsync();
+             await channel.ConnectAsync();
         }
 
         if (nextState.VoiceChannel.Id == 801249696571850762)
@@ -160,6 +160,12 @@ public class Bird : InteractionModuleBase<SocketInteractionContext>
         if (voidIds.Contains(message.Channel.Id))
         {
             await message.DeleteAsync();
+        }
+
+        if ((message.Content.StartsWith("*kicks") || message.Content.StartsWith("kicks")) &&
+            message.MentionedUsers.Select(x => x.Id).Contains(_client.CurrentUser.Id))
+        {
+            message.Channel.SendMessageAsync("*dies*");
         }
 
         if (CheckWordlist(message.Content, new List<string> { "bird", "burb", "birb" }))
