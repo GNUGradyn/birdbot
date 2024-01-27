@@ -32,7 +32,6 @@ public class Bird : InteractionModuleBase<SocketInteractionContext>
         _db = db;
         _client.MessageReceived += OnMessageAsync;
         client.Ready += ReadyAsync;
-        client.UserVoiceStateUpdated += UserVoiceStateUpdatedAsync;
         client.ReactionAdded += ReactionAddedAsync;
         client.ReactionRemoved += ReactionRemovedAsync;
         voidIds = _config.GetSection("VoidIds").Get<ulong[]>();
@@ -99,46 +98,6 @@ public class Bird : InteractionModuleBase<SocketInteractionContext>
             }
         }
     }
-
-
-    public async Task UserVoiceStateUpdatedAsync(SocketUser socketUser, SocketVoiceState currentState,
-        SocketVoiceState nextState)
-    {
-        // soundboard stuff
-        var channels = await hbi.GetChannelsAsync();
-        var max = channels.Where(x => x.GetType() == typeof(SocketVoiceChannel))
-            .MaxBy(x => ((SocketVoiceChannel)x).ConnectedUsers.Count);
-        var channel = (await hbi.GetCurrentUserAsync()).VoiceChannel;
-        if (max == null)
-        {
-            if (channel != null) await channel.DisconnectAsync();
-        }
-        else
-        {
-             await channel.ConnectAsync();
-        }
-
-        if (nextState.VoiceChannel.Id == 801249696571850762)
-        {
-            if (nextState.IsMuted) return;
-            await nextState.VoiceChannel.GetUser(socketUser.Id).ModifyAsync(x => x.Mute = true);
-            await _db.VoidMutes.AddAsync(new VoidMutes
-            {
-                UserId = socketUser.Id
-            });
-            await _db.SaveChangesAsync();
-        }
-
-        if (nextState.VoiceChannel == null || nextState.VoiceChannel.Id != 801249696571850762)
-        {
-            if (!nextState.IsMuted) return;
-            var mutes = await _db.VoidMutes.Where(x => x.UserId == socketUser.Id).ToListAsync();
-            if (mutes.Count == 0) return;
-            await nextState.VoiceChannel.GetUser(socketUser.Id).ModifyAsync(x => x.Mute = false);
-            _db.VoidMutes.RemoveRange(mutes);
-        }
-    }
-
 
     public async Task ReadyAsync()
     {
