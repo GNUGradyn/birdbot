@@ -21,8 +21,12 @@ public class Bird : InteractionModuleBase<SocketInteractionContext>
     private IGuildUser grandon;
     private IGuild hbi;
 
+    private static bool isInitialized = false;
+
     public Bird(DiscordSocketClient client, IConfiguration config, BirdDbContext db)
     {
+        if (isInitialized) return;
+        isInitialized = true;
         _client = client;
         _config = config;
         _db = db;
@@ -38,6 +42,8 @@ public class Bird : InteractionModuleBase<SocketInteractionContext>
             birds = Directory.GetFiles(birdsBasePath).Select(x => Path.Combine(birdsBasePath, x)).ToArray();
         }
     }
+    
+    
 
     public async Task ReactionRemovedAsync(Cacheable<IUserMessage, ulong> messageCacheable,
         Cacheable<IMessageChannel, ulong> channelCacheable, SocketReaction reaction)
