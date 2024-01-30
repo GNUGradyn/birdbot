@@ -30,18 +30,4 @@
       <Folder Include="birds\" />
     </ItemGroup>
 
-    <ItemGroup>
-      <Content Include="Lib\libopus.dll">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-          <Link>libopus.dll</Link>
-      </Content>
-      <Content Include="Lib\libsodium.dll">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-          <Link>libsodium.dll</Link>
-      </Content>
-      <Content Include="elevator.mp3">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      </Content>
-    </ItemGroup>
-
 </Project>
