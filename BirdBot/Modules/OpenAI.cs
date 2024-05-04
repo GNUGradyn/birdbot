@@ -61,7 +61,7 @@ public class OpenAI : InteractionModuleBase<SocketInteractionContext>
     {
         while (true)
         {
-            await Task.Delay(rand.Next((int)TimeSpan.FromDays(1).TotalMinutes, (int)TimeSpan.FromDays(7).TotalMinutes));
+            await Task.Delay(rand.Next((int)TimeSpan.FromDays(1).TotalMilliseconds, (int)TimeSpan.FromDays(7).TotalMilliseconds));
             var messagesForContext = (await general
                 .GetMessagesAsync(_config.GetSection("OpenAI").GetValue<int>("ContextSize")).FlattenAsync()).Reverse();
             var context = await Task.WhenAll(messagesForContext.Select(async x =>
@@ -72,8 +72,11 @@ public class OpenAI : InteractionModuleBase<SocketInteractionContext>
                     result =
                         $"{x.Author.Username} (in response to \"{(await general.GetMessageAsync(x.Reference.MessageId.Value)).Content})\": {x.Content}";
                 }
+                else
+                {
+                    result = $"{x.Author.Username}: {x.Content}";
 
-                result = $"{x.Author.Username}: {x.Content}";
+                }
                 if (x.Attachments.Count > 0) result += "[Image]";
                 return result;
             }));
