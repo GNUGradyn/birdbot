@@ -41,8 +41,6 @@ public class Bird : InteractionModuleBase<SocketInteractionContext>
             birds = Directory.GetFiles(birdsBasePath).Select(x => Path.Combine(birdsBasePath, x)).ToArray();
         }
     }
-    
-    
 
     public async Task ReactionRemovedAsync(Cacheable<IUserMessage, ulong> messageCacheable,
         Cacheable<IMessageChannel, ulong> channelCacheable, SocketReaction reaction)

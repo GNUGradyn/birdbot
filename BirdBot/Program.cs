@@ -6,6 +6,7 @@ using Goatbot.Data;
 using Goatbot.Modules;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using OpenAI.Extensions;
 
 public class Program
 {
@@ -35,13 +36,14 @@ public class Program
     public async Task MainAsync()
     {
         LoadConfig();
-        _services = new ServiceCollection()
+        var serviceCollection = new ServiceCollection()
             .AddSingleton(_config)
             .AddSingleton(_socketConfig)
             .AddSingleton(_client)
             .AddSingleton(x => new InteractionService(x.GetRequiredService<DiscordSocketClient>()))
-            .AddDbContext<BirdDbContext>()
-            .BuildServiceProvider();
+            .AddDbContext<BirdDbContext>();
+        serviceCollection.AddOpenAIService(settings => { settings.ApiKey = _config.GetSection("OpenAI").GetValue<string>("Token"); });
+        _services = serviceCollection.BuildServiceProvider();
         await _client.LoginAsync(TokenType.Bot, _config.GetValue<string>("Token"));
         await _handler.AddModulesAsync(Assembly.GetEntryAssembly(), _services); // Add modules
         _client.InteractionCreated += HandleInteraction; // add interaction handler
