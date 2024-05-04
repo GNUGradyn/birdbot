@@ -52,7 +52,7 @@ public class OpenAI : InteractionModuleBase<SocketInteractionContext>
                     },
                     Model = Models.Gpt_4,
                 });
-                await customerservice.SendMessageAsync(completionResult.Choices.First().Message.Content);
+                await customerservice.SendMessageAsync(completionResult.Choices.First().Message.Content, messageReference: new MessageReference(message.Id));
             }
         }
     }
