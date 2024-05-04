@@ -14,6 +14,7 @@ public class OpenAI : InteractionModuleBase<SocketInteractionContext>
     private readonly DiscordSocketClient _client;
     private static readonly Random rand = new();
     private ITextChannel general;
+    private ITextChannel customerservice;
     private readonly IConfiguration _config;
     public OpenAI(IOpenAIService openAiService, IConfiguration config, DiscordSocketClient client)
     {
@@ -21,6 +22,7 @@ public class OpenAI : InteractionModuleBase<SocketInteractionContext>
         _config = config;
         _client = client;
         _client.Ready += ReadyAsync;
+        _client.MessageReceived += MessageAsync;
     }
 
     private static bool _readyLock;
@@ -30,7 +32,29 @@ public class OpenAI : InteractionModuleBase<SocketInteractionContext>
         if (_readyLock) return;
         _readyLock = true;
         general = (ITextChannel) _client.GetChannel(_config.GetSection("OpenAI").GetValue<ulong>("GeneralChannelId"));
-        Task.Run(StartTimer);
+        customerservice = (ITextChannel) _client.GetChannel(_config.GetSection("OpenAI").GetValue<ulong>("CustomerServiceChannelId"));
+        //Task.Run(StartTimer);
+    }
+
+    public async Task MessageAsync(SocketMessage message)
+    {
+        if (message.Author.IsBot) return;
+        if (message.Channel.Id == customerservice.Id)
+        {
+            using (message.Channel.EnterTypingState())
+            {
+                var completionResult = await _openAiService.ChatCompletion.CreateCompletion(new ChatCompletionCreateRequest
+                {
+                    Messages = new List<ChatMessage>
+                    {
+                        ChatMessage.FromSystem(_config.GetSection("OpenAI").GetValue<string>("CustomerServicePrompt")),
+                        ChatMessage.FromUser(message.Content),
+                    },
+                    Model = Models.Gpt_4,
+                });
+                await customerservice.SendMessageAsync(completionResult.Choices.First().Message.Content);
+            }
+        }
     }
 
     public async void StartTimer()
