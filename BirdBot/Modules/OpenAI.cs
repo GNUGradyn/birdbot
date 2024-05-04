@@ -33,7 +33,7 @@ public class OpenAI : InteractionModuleBase<SocketInteractionContext>
         _readyLock = true;
         general = (ITextChannel) _client.GetChannel(_config.GetSection("OpenAI").GetValue<ulong>("GeneralChannelId"));
         customerservice = (ITextChannel) _client.GetChannel(_config.GetSection("OpenAI").GetValue<ulong>("CustomerServiceChannelId"));
-        //Task.Run(StartTimer);
+        Task.Run(StartTimer);
     }
 
     public async Task MessageAsync(SocketMessage message)
