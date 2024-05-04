@@ -57,11 +57,11 @@ public class OpenAI : InteractionModuleBase<SocketInteractionContext>
         }
     }
 
-    public async void StartTimer()
+    public async Task StartTimer()
     {
         while (true)
         {
-            Thread.Sleep(rand.Next((int)TimeSpan.FromDays(1).TotalMinutes, (int)TimeSpan.FromDays(7).TotalMinutes));
+            await Task.Delay(rand.Next((int)TimeSpan.FromDays(1).TotalMinutes, (int)TimeSpan.FromDays(7).TotalMinutes));
             var messagesForContext = (await general
                 .GetMessagesAsync(_config.GetSection("OpenAI").GetValue<int>("ContextSize")).FlattenAsync()).Reverse();
             var context = await Task.WhenAll(messagesForContext.Select(async x =>
