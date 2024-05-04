@@ -25,11 +25,11 @@ public class Bird : InteractionModuleBase<SocketInteractionContext>
 
     public Bird(DiscordSocketClient client, IConfiguration config, BirdDbContext db)
     {
-        if (isInitialized) return;
-        isInitialized = true;
         _client = client;
         _config = config;
         _db = db;
+        if (isInitialized) return;
+        isInitialized = true;
         _client.MessageReceived += OnMessageAsync;
         client.Ready += ReadyAsync;
         client.ReactionAdded += ReactionAddedAsync;
