@@ -1,4 +1,5 @@
-﻿using Discord;
+﻿using System.Collections;
+using Discord;
 using Discord.Interactions;
 using Discord.WebSocket;
 using Microsoft.Extensions.Configuration;
@@ -43,13 +44,29 @@ public class OpenAI : InteractionModuleBase<SocketInteractionContext>
         {
             using (message.Channel.EnterTypingState())
             {
+                var messages = new MessageReplyChainLinkedList();
+                messages.AddNode(new MessageReplyChainLinkedList.Node(ChatMessage.FromUser(message.Content)));
+                ulong? head = message.Reference?.MessageId.Value;
+                while (head != null)
+                {
+                    var discordMessage = await customerservice.GetMessageAsync(head.Value);
+                    if (discordMessage.Author.Id == _client.CurrentUser.Id)
+                        messages.AddNode(new MessageReplyChainLinkedList.Node(ChatMessage.FromAssistant(discordMessage.Content)));
+                    else
+                    {
+                        var content = discordMessage.Content;
+                        if (message.Attachments.Count > 0) content += "\n[Image]";
+                        messages.AddNode(new MessageReplyChainLinkedList.Node(ChatMessage.FromUser(content)));
+                    }
+
+                    head = message.Reference?.MessageId.Value;
+                    if (discordMessage.Id == head) head = null; // Workaround for dumb discord.net bug im too lazy to fix properly
+                }
+                messages.AddNode(new MessageReplyChainLinkedList.Node(ChatMessage.FromSystem(_config.GetSection("OpenAI").GetValue<string>("CustomerServicePrompt"))));
+                messages.Reverse();
                 var completionResult = await _openAiService.ChatCompletion.CreateCompletion(new ChatCompletionCreateRequest
                 {
-                    Messages = new List<ChatMessage>
-                    {
-                        ChatMessage.FromSystem(_config.GetSection("OpenAI").GetValue<string>("CustomerServicePrompt")),
-                        ChatMessage.FromUser(message.Content),
-                    },
+                    Messages = messages.ToList(),
                     Model = Models.Gpt_4,
                 });
                 await customerservice.SendMessageAsync(completionResult.Choices.First().Message.Content, messageReference: new MessageReference(message.Id));
@@ -94,6 +111,65 @@ public class OpenAI : InteractionModuleBase<SocketInteractionContext>
                 });
 
         await general.SendMessageAsync(completionResult.Choices.First().Message.Content);
+        }
+    }
+    
+    private class MessageReplyChainLinkedList : IEnumerable<ChatMessage>
+    {
+        public Node head;
+
+        public class Node
+        {
+            public ChatMessage data;
+            public Node next;
+
+            public Node(ChatMessage message)
+            {
+                data = message;
+                next = null;
+            }
+        }
+    
+        public void AddNode(Node node)
+        {
+            if (head == null) head = node;
+            else
+            {
+                Node temp = head;
+                while (temp.next != null) temp = temp.next;
+                temp.next = node;
+            }
+        }
+
+        public void Reverse()
+        {
+            Node prev = null;
+            Node current = head;
+            Node next = null;
+
+            while (current != null)
+            {
+                next = current.next;
+                current.next = prev;
+                prev = current;
+                current = next;
+            }
+            head = prev;
+        }
+
+        public IEnumerator<ChatMessage> GetEnumerator()
+        {
+            Node current = head;
+            while (current != null)
+            {
+                yield return current.data;
+                current = current.next;
+            }
+        }
+
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return GetEnumerator();
         }
     }
 }
