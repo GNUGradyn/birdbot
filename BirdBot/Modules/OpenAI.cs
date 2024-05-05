@@ -67,7 +67,7 @@ public class OpenAI : InteractionModuleBase<SocketInteractionContext>
                 var completionResult = await _openAiService.ChatCompletion.CreateCompletion(new ChatCompletionCreateRequest
                 {
                     Messages = messages.ToList(),
-                    Model = Models.Gpt_4,
+                    Model = Models.Gpt_4_turbo_preview,
                 });
                 await customerservice.SendMessageAsync(completionResult.Choices.First().Message.Content, messageReference: new MessageReference(message.Id));
             }
