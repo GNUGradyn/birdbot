@@ -1,11 +1,14 @@
 ﻿using System.Collections;
+using System.Globalization;
 using Discord;
 using Discord.Interactions;
 using Discord.WebSocket;
 using Microsoft.Extensions.Configuration;
+using OpenAI.Builders;
 using OpenAI.Interfaces;
 using OpenAI.ObjectModels;
 using OpenAI.ObjectModels.RequestModels;
+using OpenAI.Utilities.FunctionCalling;
 
 namespace Goatbot.Modules;
 
@@ -64,12 +67,37 @@ public class OpenAI : InteractionModuleBase<SocketInteractionContext>
                 }
                 messages.AddNode(new MessageReplyChainLinkedList.Node(ChatMessage.FromSystem(_config.GetSection("OpenAI").GetValue<string>("CustomerServicePrompt"))));
                 messages.Reverse();
-                var completionResult = await _openAiService.ChatCompletion.CreateCompletion(new ChatCompletionCreateRequest
+                var tools = new AITools();
+                var req = new ChatCompletionCreateRequest
                 {
                     Messages = messages.ToList(),
                     Model = Models.Gpt_4_turbo_preview,
-                });
-                await customerservice.SendMessageAsync(completionResult.Choices.First().Message.Content, messageReference: new MessageReference(message.Id));
+                    Tools = FunctionCallingHelper.GetToolDefinitions<AITools>()
+                };
+                do
+                {
+                    var reply = await _openAiService.ChatCompletion.CreateCompletion(req);
+                    if (!reply.Successful)
+                    {
+                        throw new Exception(reply.Error?.Message);
+                    }
+                    var response = reply.Choices.First().Message;
+                    req.Messages.Add(response);
+                    if (response.ToolCalls?.Count > 0)
+                    {
+                        var functionCall = response.ToolCalls.First().FunctionCall;
+                        var result = FunctionCallingHelper.CallFunction<string>(functionCall, tools);
+                        req.Messages.Add(ChatMessage.FromTool(result, response.ToolCalls.First().Id));
+                    }
+
+                    if (response.FunctionCall != null)
+                    {
+                        var functionCall = response.FunctionCall;
+                        var result = FunctionCallingHelper.CallFunction<string>(functionCall, tools);
+                        response.Content = result;
+                    }
+                } while (req.Messages.Last().ToolCalls?.Count > 0 || req.Messages.Last().FunctionCall != null || req.Messages.Last().Role == "tool");
+                await customerservice.SendMessageAsync(req.Messages.Last().Content, messageReference: new MessageReference(message.Id));
             }
         }
     }
