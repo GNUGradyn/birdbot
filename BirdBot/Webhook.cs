@@ -108,9 +108,9 @@ public class Webhook
                             throw new Exception(reply.Error?.Message);
                         }
                         if (data.TestMode)
-                            await testingGrounds.SendMessageAsync(reply.Choices.First().Message.Content);
+                            await testingGrounds.SendMessageAsync($"{String.Join(' ', data.Pings.Select(x => $"<@{x}>"))} {reply.Choices.First().Message.Content}");
                         else 
-                            await customerservice.SendMessageAsync(reply.Choices.First().Message.Content);
+                            await customerservice.SendMessageAsync($"{String.Join(' ', data.Pings.Select(x => $"<@{x}>"))} {reply.Choices.First().Message.Content}");
                     }
                     context.Response.StatusCode = 204;
                     break;
@@ -126,5 +126,6 @@ public class Webhook
     {
         public string Message { get; set; }
         public bool TestMode { get; set; } = false;
+        public ulong[] Pings { get; set; } = [];
     }
 }
