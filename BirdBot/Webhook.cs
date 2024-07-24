@@ -15,6 +15,7 @@ public class Webhook
     private readonly DiscordSocketClient _client;
     private IOpenAIService _openAiService; 
     private ITextChannel customerservice;
+    private ITextChannel testingGrounds;
     private readonly IConfiguration _config;
 
     public Webhook(IConfiguration config, DiscordSocketClient client, IOpenAIService openAiService)
@@ -27,13 +28,15 @@ public class Webhook
 
     private async Task ReadyAsync()
     {
-        customerservice = (ITextChannel) _client.GetChannel(_config.GetSection("OpenAI").GetValue<ulong>("CustomerServiceChannelId"));
+        customerservice =
+            (ITextChannel)_client.GetChannel(_config.GetSection("OpenAI").GetValue<ulong>("CustomerServiceChannelId"));
+        testingGrounds = (ITextChannel) _client.GetChannel(_config.GetValue<ulong>("TestingGroundsId"));
     }
 
     public async Task Listen()
     {
         await WebhookListener(_config.GetValue<int>("WebhookPort"), _config.GetValue<string>("WebhookToken"));
-    }
+    } 
     
     private async Task WebhookListener(int port, string token)
     {
@@ -104,7 +107,10 @@ public class Webhook
                         {
                             throw new Exception(reply.Error?.Message);
                         }
-                        await customerservice.SendMessageAsync(reply.Choices.First().Message.Content);
+                        if (data.TestMode)
+                            await testingGrounds.SendMessageAsync(reply.Choices.First().Message.Content);
+                        else 
+                            await customerservice.SendMessageAsync(reply.Choices.First().Message.Content);
                     }
                     context.Response.StatusCode = 204;
                     break;
@@ -119,5 +125,6 @@ public class Webhook
     public class RequestModel
     {
         public string Message { get; set; }
+        public bool TestMode { get; set; } = false;
     }
 }
