@@ -42,16 +42,17 @@ public class Program
             .AddSingleton(_socketConfig)
             .AddSingleton(_client)
             .AddSingleton(x => new InteractionService(x.GetRequiredService<DiscordSocketClient>()))
+            .AddSingleton<Webhook>()
             .AddDbContext<BirdDbContext>();
         serviceCollection.AddOpenAIService(settings => { settings.ApiKey = _config.GetSection("OpenAI").GetValue<string>("Token"); });
         _services = serviceCollection.BuildServiceProvider();
+        _services.GetService<Webhook>().Listen();
         await _client.LoginAsync(TokenType.Bot, _config.GetValue<string>("Token"));
         await _handler.AddModulesAsync(Assembly.GetEntryAssembly(), _services); // Add modules
         _client.InteractionCreated += HandleInteraction; // add interaction handler
         await _client.StartAsync();
 
         Ravioli.RavioliRavioliWhatsInThePocketoli(_client);
-        await Webhook.WebhookListener(_config.GetValue<int>("WebhookPort"));
         await Task.Delay(Timeout.Infinite);
     }
 

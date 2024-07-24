@@ -1,10 +1,41 @@
 ﻿using System.Net;
+using Discord;
+using Discord.WebSocket;
+using Microsoft.Extensions.Configuration;
+using Newtonsoft.Json;
+using OpenAI.Interfaces;
+using OpenAI.ObjectModels;
+using OpenAI.ObjectModels.RequestModels;
+using OpenAI.Utilities.FunctionCalling;
 
 namespace Goatbot;
 
 public class Webhook
 {
-    public static async Task WebhookListener(int port)
+    private readonly DiscordSocketClient _client;
+    private IOpenAIService _openAiService; 
+    private ITextChannel customerservice;
+    private readonly IConfiguration _config;
+
+    public Webhook(IConfiguration config, DiscordSocketClient client, IOpenAIService openAiService)
+    {
+        _config = config;
+        _client = client;
+        _openAiService = openAiService;
+        client.Ready += ReadyAsync; 
+    }
+
+    private async Task ReadyAsync()
+    {
+        customerservice = (ITextChannel) _client.GetChannel(_config.GetSection("OpenAI").GetValue<ulong>("CustomerServiceChannelId"));
+    }
+
+    public async Task Listen()
+    {
+        await WebhookListener(_config.GetValue<int>("WebhookPort"), _config.GetValue<string>("WebhookToken"));
+    }
+    
+    private async Task WebhookListener(int port, string token)
     {
         if (!HttpListener.IsSupported)
         {
@@ -25,17 +56,68 @@ public class Webhook
                     if (context.Request.HttpMethod != "GET")
                     {
                         context.Response.StatusCode = 405;
-                        context.Response.OutputStream.Close();
+                    }
+                    else
+                    {
+                        context.Response.StatusCode = 204;
+                    }
+                    break;
+                case "/customerservice":
+                    if (context.Request.HttpMethod != "POST")
+                    {
+                        context.Response.StatusCode = 405;
                         break;
                     }
+
+                    if (context.Request.Headers.Get("Authorization") == null)
+                    {
+                        context.Response.StatusCode = 401;
+                        break;
+                    }
+                    if (context.Request.Headers.Get("Authorization") != $"Bearer {token}")
+                    {
+                        context.Response.StatusCode = 403;
+                        break;
+                    }
+                    using (var body = context.Request.InputStream)
+                    using (var reader = new StreamReader(body, context.Request.ContentEncoding))
+                    {
+                        var data = JsonConvert.DeserializeObject<RequestModel>(await reader.ReadToEndAsync());
+                        if (data == null)
+                        {
+                            context.Response.StatusCode = 400;
+                            break;
+                        }
+                        var req = new ChatCompletionCreateRequest
+                        {
+                            Messages = new[]
+                            {
+                                ChatMessage.FromSystem(_config.GetSection("OpenAI")
+                                    .GetValue<string>("CustomerServicePrompt")),
+                                ChatMessage.FromSystem(data.Message)
+                            },
+                            Model = Models.Gpt_4o_mini,
+                            Tools = FunctionCallingHelper.GetToolDefinitions<AITools>()
+                        };
+                        var reply = await _openAiService.ChatCompletion.CreateCompletion(req);
+                        if (!reply.Successful)
+                        {
+                            throw new Exception(reply.Error?.Message);
+                        }
+                        await customerservice.SendMessageAsync(reply.Choices.First().Message.Content);
+                    }
                     context.Response.StatusCode = 204;
-                    context.Response.OutputStream.Close();
                     break;
                 default:
                     context.Response.StatusCode = 404;
-                    context.Response.OutputStream.Close();
                     break;
             }
+            context.Response.Close();
         }
+    }
+
+    public class RequestModel
+    {
+        public string Message { get; set; }
     }
 }

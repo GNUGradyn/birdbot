@@ -16,7 +16,7 @@ public class OpenAI : InteractionModuleBase<SocketInteractionContext>
 {
     private IOpenAIService _openAiService; 
     private readonly DiscordSocketClient _client;
-    private static readonly Random rand = new();
+    private static readonly Random rand = new();    
     private ITextChannel general;
     private ITextChannel customerservice;
     private readonly IConfiguration _config;
@@ -77,7 +77,7 @@ public class OpenAI : InteractionModuleBase<SocketInteractionContext>
                 var req = new ChatCompletionCreateRequest
                 {
                     Messages = messages.ToList(),
-                    Model = Models.Gpt_4_turbo_preview,
+                    Model = Models.Gpt_4o_mini,
                     Tools = FunctionCallingHelper.GetToolDefinitions<AITools>()
                 };
                 do
@@ -154,7 +154,7 @@ public class OpenAI : InteractionModuleBase<SocketInteractionContext>
                     {
                         ChatMessage.FromSystem(prompt)
                     },
-                    Model = Models.Gpt_4
+                    Model = Models.Gpt_4o_mini,
                 });
 
         await general.SendMessageAsync(completionResult.Choices.First().Message.Content);
