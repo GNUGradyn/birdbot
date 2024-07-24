@@ -117,7 +117,7 @@ public class OpenAI : InteractionModuleBase<SocketInteractionContext>
                 {
                     await customerservice.SendFileAsync(new FileAttachment(new MemoryStream(image), "OhHellIHaveToPutAFileNameUhhThisIsTheFileNameLmao.jpg"), req.Messages.Last().Content, messageReference: new MessageReference(message.Id));
                 }
-        }
+            }
         }
     }
 

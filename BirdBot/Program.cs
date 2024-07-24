@@ -2,6 +2,7 @@
 using Discord;
 using Discord.Interactions;
 using Discord.WebSocket;
+using Goatbot;
 using Goatbot.Data;
 using Goatbot.Modules;
 using Microsoft.Extensions.Configuration;
@@ -50,7 +51,7 @@ public class Program
         await _client.StartAsync();
 
         Ravioli.RavioliRavioliWhatsInThePocketoli(_client);
-
+        await Webhook.WebhookListener(_config.GetValue<int>("WebhookPort"));
         await Task.Delay(Timeout.Infinite);
     }
 
