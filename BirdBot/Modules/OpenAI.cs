@@ -43,6 +43,7 @@ public class OpenAI : InteractionModuleBase<SocketInteractionContext>
 
     public async Task MessageAsync(SocketMessage message)
     {
+        byte[] image = null;
         if (message.Author.IsBot) return;
         if (message.Channel.Id == customerservice.Id)
         {
@@ -55,7 +56,8 @@ public class OpenAI : InteractionModuleBase<SocketInteractionContext>
                 {
                     var discordMessage = await customerservice.GetMessageAsync(head.Value);
                     if (discordMessage.Author.Id == _client.CurrentUser.Id)
-                        messages.AddNode(new MessageReplyChainLinkedList.Node(ChatMessage.FromAssistant(discordMessage.Content)));
+                        messages.AddNode(
+                            new MessageReplyChainLinkedList.Node(ChatMessage.FromAssistant(discordMessage.Content)));
                     else
                     {
                         var content = discordMessage.Content;
@@ -64,9 +66,12 @@ public class OpenAI : InteractionModuleBase<SocketInteractionContext>
                     }
 
                     head = message.Reference?.MessageId.Value;
-                    if (discordMessage.Id == head) head = null; // Workaround for dumb discord.net bug im too lazy to fix properly
+                    if (discordMessage.Id == head)
+                        head = null; // Workaround for dumb discord.net bug im too lazy to fix properly
                 }
-                messages.AddNode(new MessageReplyChainLinkedList.Node(ChatMessage.FromSystem(_config.GetSection("OpenAI").GetValue<string>("CustomerServicePrompt"))));
+
+                messages.AddNode(new MessageReplyChainLinkedList.Node(
+                    ChatMessage.FromSystem(_config.GetSection("OpenAI").GetValue<string>("CustomerServicePrompt"))));
                 messages.Reverse();
                 var tools = new AITools();
                 var req = new ChatCompletionCreateRequest
@@ -82,24 +87,37 @@ public class OpenAI : InteractionModuleBase<SocketInteractionContext>
                     {
                         throw new Exception(reply.Error?.Message);
                     }
+
                     var response = reply.Choices.First().Message;
                     req.Messages.Add(response);
                     if (response.ToolCalls?.Count > 0)
                     {
-                        var functionCall = response.ToolCalls.First().FunctionCall;
-                        var result = FunctionCallingHelper.CallFunction<string>(functionCall, tools);
-                        req.Messages.Add(ChatMessage.FromTool(result, response.ToolCalls.First().Id));
-                    }
+                        foreach (var functionCall in response.ToolCalls)
+                        {
+                            if (functionCall.FunctionCall.Name == "porch")
+                            {
+                                var result =
+                                    FunctionCallingHelper.CallFunction<Task<byte[]>>(functionCall.FunctionCall, tools);
+                                image = await result;
+                                req.Messages.Add(ChatMessage.FromTool(
+                                    "Done. Image of porch will be included in next message",
+                                    response.ToolCalls.Last(x => x.FunctionCall.Name == "porch").Id));
+                            }
+                        }
 
-                    if (response.FunctionCall != null)
-                    {
-                        var functionCall = response.FunctionCall;
-                        var result = FunctionCallingHelper.CallFunction<string>(functionCall, tools);
-                        response.Content = result;
                     }
-                } while (req.Messages.Last().ToolCalls?.Count > 0 || req.Messages.Last().FunctionCall != null || req.Messages.Last().Role == "tool");
-                await customerservice.SendMessageAsync(req.Messages.Last().Content, messageReference: new MessageReference(message.Id));
-            }
+                } while (req.Messages.Last().ToolCalls?.Count > 0 || req.Messages.Last().FunctionCall != null ||
+                         req.Messages.Last().Role == "tool");
+
+                if (image == null)
+                {
+                    await customerservice.SendMessageAsync(req.Messages.Last().Content, messageReference: new MessageReference(message.Id));
+                }
+                else
+                {
+                    await customerservice.SendFileAsync(new FileAttachment(new MemoryStream(image), "OhHellIHaveToPutAFileNameUhhThisIsTheFileNameLmao.jpg"), req.Messages.Last().Content, messageReference: new MessageReference(message.Id));
+                }
+        }
         }
     }
 
