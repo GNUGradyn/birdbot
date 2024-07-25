@@ -100,7 +100,7 @@ public class OpenAI : InteractionModuleBase<SocketInteractionContext>
                                     FunctionCallingHelper.CallFunction<Task<byte[]>>(functionCall.FunctionCall, tools);
                                 image = await result;
                                 req.Messages.Add(ChatMessage.FromTool(
-                                    "Done. Image of porch will be included in next message",
+                                    "Done. Image of porch will be included in this message",
                                     response.ToolCalls.Last(x => x.FunctionCall.Name == "porch").Id));
                             }
                         }
