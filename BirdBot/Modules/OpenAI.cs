@@ -38,7 +38,7 @@ public class OpenAI : InteractionModuleBase<SocketInteractionContext>
         general = (ITextChannel) _client.GetChannel(_config.GetSection("OpenAI").GetValue<ulong>("GeneralChannelId"));
         customerservice = (ITextChannel) _client.GetChannel(_config.GetSection("OpenAI").GetValue<ulong>("CustomerServiceChannelId"));
         AITools.ship24bearer = _config.GetValue<string>("Ship24Bearer");
-        Task.Run(StartTimer);
+        //Task.Run(StartTimer);
     }
 
     public async Task MessageAsync(SocketMessage message)
