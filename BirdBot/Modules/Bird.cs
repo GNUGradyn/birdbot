@@ -166,7 +166,7 @@ public class Bird : InteractionModuleBase<SocketInteractionContext>
 
         if (message.Content.ToLower().Contains("car"))
         {
-            await message.AddReactionAsync(new Emoji("\uD83D\uDCA9"));
+           // await message.AddReactionAsync(new Emoji("\uD83D\uDCA9"));
         }
      }
 
