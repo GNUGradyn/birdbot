@@ -1,4 +1,5 @@
-﻿using Discord;
+﻿using System.Text.RegularExpressions;
+using Discord;
 using Discord.Interactions;
 using Discord.WebSocket;
 using Goatbot.Data;
@@ -17,6 +18,10 @@ public class Bird : InteractionModuleBase<SocketInteractionContext>
     private readonly string[] birds;
     private readonly BirdDbContext _db;
     private static Random random = new Random();
+    private static readonly Regex EmojiRegex = new Regex(
+        @"\p{Cs}|\p{C}|\uD83C[\uDF00-\uDFFF]|\uD83D[\uDC00-\uDE4F\uDE80-\uDEFF]|[\u2600-\u26FF\u2700-\u27BF]",
+        RegexOptions.Compiled | RegexOptions.IgnoreCase
+    );
 
     private IGuildUser grandon;
     private IGuild hbi;
@@ -128,13 +133,25 @@ public class Bird : InteractionModuleBase<SocketInteractionContext>
         if ((message.Content.StartsWith("*kicks") || message.Content.StartsWith("kicks")) &&
             message.MentionedUsers.Select(x => x.Id).Contains(_client.CurrentUser.Id))
         {
-            message.Channel.SendMessageAsync("*dies*");
+            await message.Channel.SendMessageAsync("*dies*");
         }
 
-        if(message.Content.ToLower().Contains("bird, fish react this"))
+        if(message.Content.ToLower().Replace(",","").Contains("bird") && message.Content.ToLower().Contains("react"))
         {
-            var messages = await message.Channel.GetMessagesAsync(message.Id, Direction.Before,2).FlattenAsync();
-            await messages.First((x) => x.Author.Id != _client.CurrentUser.Id).AddReactionAsync(new Emoji("🐟"));
+            Emoji emojiToReact = null;
+            message.Content.Split(' ').FirstOrDefault((x) => Emoji.TryParse(x, out emojiToReact));
+            if (emojiToReact != null)
+            {
+                var messages = await message.Channel.GetMessagesAsync(message.Id, Direction.Before,4).FlattenAsync();
+                try
+                {
+                    await messages.First((x) => !x.Author.IsBot).AddReactionAsync(emojiToReact);
+                }
+                catch
+                {
+                    
+                }
+            }
         }
         
         if (CheckWordlist(message.Content, new List<string> { "bird", "burb", "birb" }))
