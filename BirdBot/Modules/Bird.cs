@@ -131,6 +131,12 @@ public class Bird : InteractionModuleBase<SocketInteractionContext>
             message.Channel.SendMessageAsync("*dies*");
         }
 
+        if(message.Content.ToLower().Contains("bird, fish react this"))
+        {
+            var messages = await message.Channel.GetMessagesAsync(message.Id, Direction.Before,2).FlattenAsync();
+            await messages.First((x) => x.Author.Id != _client.CurrentUser.Id).AddReactionAsync(new Emoji("🐟"));
+        }
+        
         if (CheckWordlist(message.Content, new List<string> { "bird", "burb", "birb" }))
         {
             if (random.Next(100) == 69)
