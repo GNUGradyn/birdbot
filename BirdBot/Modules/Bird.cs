@@ -18,6 +18,7 @@ public class Bird : InteractionModuleBase<SocketInteractionContext>
     private readonly string[] birds;
     private readonly BirdDbContext _db;
     private static Random random = new Random();
+
     private static readonly Regex EmojiRegex = new Regex(
         @"\p{Cs}|\p{C}|\uD83C[\uDF00-\uDFFF]|\uD83D[\uDC00-\uDE4F\uDE80-\uDEFF]|[\u2600-\u26FF\u2700-\u27BF]",
         RegexOptions.Compiled | RegexOptions.IgnoreCase
@@ -118,7 +119,8 @@ public class Bird : InteractionModuleBase<SocketInteractionContext>
     {
         while (true)
         {
-            await grandon.ModifyAsync(x => x.Nickname = _db.Gs.OrderBy(y => EF.Functions.Random()).Take(1).ToList()[0].Word.FirstCharToUpper());
+            await grandon.ModifyAsync(x =>
+                x.Nickname = _db.Gs.OrderBy(y => EF.Functions.Random()).Take(1).ToList()[0].Word.FirstCharToUpper());
             await Task.Delay(86400000);
         }
     }
@@ -136,29 +138,38 @@ public class Bird : InteractionModuleBase<SocketInteractionContext>
             await message.Channel.SendMessageAsync("*dies*");
         }
 
-        if(message.Content.ToLower().Replace(",","").Contains("bird") && message.Content.ToLower().Contains("react"))
+        if (message.Content.ToLower().Replace(",", "").Contains("bird") && message.Content.ToLower().Contains("react"))
         {
-            Emoji emojiToReact = null;
-            message.Content.Split(' ').FirstOrDefault((x) => Emoji.TryParse(x, out emojiToReact));
+            Emoji? emojiToReact = null;
+            
+            // This is to get rid of the first instance of the word "bird". This is because its just looking for the word "bird", 
+            // And if it is found, it will use the first valid emoji. Since the word bird is also an emoji we don't want to include it in the check
+            // Unless it's the second occurence (like "bird, bird react this man")
+            string messageContentWithoutWakeWord = message.Content;
+            int indexOfWakeWord = messageContentWithoutWakeWord.IndexOf("", StringComparison.CurrentCultureIgnoreCase);
+            messageContentWithoutWakeWord =  messageContentWithoutWakeWord.Substring(0, indexOfWakeWord) + messageContentWithoutWakeWord.Substring(indexOfWakeWord + "bird".Length);
+           
+            foreach (var word in messageContentWithoutWakeWord.Split(' '))
+            {
+                var success = Emoji.TryParse(word, out emojiToReact);
+                if (success) break;
+                success = Emoji.TryParse($":{word}:", out emojiToReact);
+                if (success) break;
+            }
+
             if (emojiToReact != null)
             {
-                var messages = await message.Channel.GetMessagesAsync(message.Id, Direction.Before,4).FlattenAsync();
-                try
-                {
-                    await messages.First((x) => !x.Author.IsBot).AddReactionAsync(emojiToReact);
-                }
-                catch
-                {
-                    
-                }
+                var messages = await message.Channel.GetMessagesAsync(message.Id, Direction.Before, 4).FlattenAsync();
+                await messages.First((x) => !x.Author.IsBot).AddReactionAsync(emojiToReact);
             }
         }
-        
+
         if (CheckWordlist(message.Content, new List<string> { "bird", "burb", "birb" }))
         {
             if (random.Next(100) == 69)
             {
-                await message.Channel.SendMessageAsync("bcdefghijklmnopqurstuvwxyz".ToCharArray()[random.Next(25)].ToString());
+                await message.Channel.SendMessageAsync("bcdefghijklmnopqurstuvwxyz".ToCharArray()[random.Next(25)]
+                    .ToString());
                 await Task.Delay(1000);
                 await message.Channel.SendMessageAsync("I mean");
                 await Task.Delay(500);
@@ -189,9 +200,9 @@ public class Bird : InteractionModuleBase<SocketInteractionContext>
 
         if (message.Content.ToLower().Contains("car"))
         {
-           // await message.AddReactionAsync(new Emoji("\uD83D\uDCA9"));
+            // await message.AddReactionAsync(new Emoji("\uD83D\uDCA9"));
         }
-     }
+    }
 
     [SlashCommand("bird", "bird")]
     public async Task BirdAsync()
@@ -219,7 +230,7 @@ public class Bird : InteractionModuleBase<SocketInteractionContext>
         await _db.SaveChangesAsync();
         await RespondAsync("k");
     }
-    
+
     private bool CheckWordlist(string input, IEnumerable<string> wordlist)
     {
         foreach (var word in wordlist)
