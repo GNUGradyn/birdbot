@@ -146,7 +146,7 @@ public class Bird : InteractionModuleBase<SocketInteractionContext>
             // And if it is found, it will use the first valid emoji. Since the word bird is also an emoji we don't want to include it in the check
             // Unless it's the second occurence (like "bird, bird react this man")
             string messageContentWithoutWakeWord = message.Content;
-            int indexOfWakeWord = messageContentWithoutWakeWord.IndexOf("", StringComparison.CurrentCultureIgnoreCase);
+            int indexOfWakeWord = messageContentWithoutWakeWord.IndexOf("bird", StringComparison.CurrentCultureIgnoreCase);
             messageContentWithoutWakeWord =  messageContentWithoutWakeWord.Substring(0, indexOfWakeWord) + messageContentWithoutWakeWord.Substring(indexOfWakeWord + "bird".Length);
            
             foreach (var word in messageContentWithoutWakeWord.Split(' '))
