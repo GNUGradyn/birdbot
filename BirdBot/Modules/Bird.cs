@@ -12,6 +12,8 @@ namespace Goatbot.Modules;
 
 public class Bird : InteractionModuleBase<SocketInteractionContext>
 {
+    private static readonly string[] mcDeaths = ["<player> was pricked to death","<player> walked into a cactus while trying to escape <player/mob>","<player> drowned","<player> drowned while trying to escape <player/mob>","<entity> died from dehydration","<entity> died from dehydration while trying to escape <player/mob>","<player> experienced kinetic energy","<player> experienced kinetic energy while trying to escape <player/mob>","<player> blew up","<player> was blown up by <player/mob>","<player> was blown up by <player/mob> using <item>","<player> hit the ground too hard","<player> hit the ground too hard while trying to escape <player/mob>","<player> fell from a high place","<player> fell off a ladder","<player> fell off some vines","<player> fell off some weeping vines","<player> fell off some twisting vines","<player> fell off scaffolding","<player> fell while climbing","death.fell.accident.water","<player> was doomed to fall","<player> was doomed to fall by <player/mob>","<player> was doomed to fall by <player/mob> using <item>","<player> was impaled on a stalagmite","<player> was impaled on a stalagmite while fighting <player/mob>","<player> was squashed by a falling anvil","<player> was squashed by a falling block","<player> was skewered by a falling stalactite","<player> went up in flames","<player> walked into fire while fighting <player/mob>","<player> burned to death","<player> was burned to a crisp while fighting <player/mob>","<player> went off with a bang","<player> went off with a bang due to a firework fired from <item> by <player/mob>","<player> tried to swim in lava","<player> tried to swim in lava to escape <player/mob>","<player> was struck by lightning","<player> was struck by lightning while fighting <player/mob>","<player> discovered the floor was lava","<player> walked into the danger zone due to <player/mob>","<player> was killed by magic","<player> was killed by magic while trying to escape <player/mob>","<player> was killed by <player/mob> using magic","<player> was killed by <player/mob> using <item>","<player> froze to death","<player> was frozen to death by <player/mob>","<player> was slain by <player/mob>","<player> was slain by <player/mob> using <item>","<player> was stung to death","<player> was stung to death by <player/mob> using <item>","<player> was obliterated by a sonically-charged shriek","<player> was obliterated by a sonically-charged shriek while trying to escape <player/mob> wielding <item>","<player> was smashed by <player/mob>","<player> was smashed by <player/mob> with <item>","<player> was speared by <player/mob>","<player> was speared by <player/mob> using <item>","<player> was shot by <player/mob>","<player> was shot by <player/mob> using <item>","<player> was pummeled by <player/mob>","<player> was pummeled by <player/mob> using <item>","<player> was fireballed by <player/mob>","<player> was fireballed by <player/mob> using <item>","<player> was shot by a skull from <player/mob>","<player> was shot by a skull from <player/mob> using <item>","<player> starved to death","<player> starved to death while fighting <player/mob>","<player> suffocated in a wall","<player> suffocated in a wall while fighting <player/mob>","<player> was squished too much","<player> was squashed by <player/mob>","<player> left the confines of this world","<player> left the confines of this world while fighting <player/mob>","<player> was poked to death by a sweet berry bush","<player> was poked to death by a sweet berry bush while trying to escape <player/mob>","<player> was killed while trying to hurt <player/mob>","<player> was killed by <item> while trying to hurt <player/mob>","<player> was impaled by <player/mob>","<player> was impaled by <player/mob> with <item>","<player> fell out of the world","<player> didn't want to live in the same world as <player/mob>","<player> withered away","<player> withered away while fighting <player/mob>","<player> died","<player> died because of <player/mob>","<player> was killed","<player> was killed while fighting <player/mob>","<player> was killed by even more magic","<player>"];
+    
     private readonly DiscordSocketClient _client;
     private readonly IConfiguration _config;
     private readonly ulong[] voidIds;
@@ -28,6 +30,9 @@ public class Bird : InteractionModuleBase<SocketInteractionContext>
     private IGuild hbi;
 
     private static bool isInitialized = false;
+
+    private static async Task<IMessage> GetMessageToActOnForWakeWord(IMessage message) => 
+        (await message.Channel.GetMessagesAsync(message.Id, Direction.Before, 4).FlattenAsync()).First((x) => !x.Author.IsBot);
 
     public Bird(DiscordSocketClient client, IConfiguration config, BirdDbContext db)
     {
@@ -147,7 +152,7 @@ public class Bird : InteractionModuleBase<SocketInteractionContext>
             // Unless it's the second occurence (like "bird, bird react this man")
             string messageContentWithoutWakeWord = message.Content;
             int indexOfWakeWord = messageContentWithoutWakeWord.IndexOf("bird", StringComparison.CurrentCultureIgnoreCase);
-            messageContentWithoutWakeWord =  messageContentWithoutWakeWord.Substring(0, indexOfWakeWord) + messageContentWithoutWakeWord.Substring(indexOfWakeWord + "bird".Length);
+            messageContentWithoutWakeWord = messageContentWithoutWakeWord.Substring(0, indexOfWakeWord) + messageContentWithoutWakeWord.Substring(indexOfWakeWord + "bird".Length);
            
             foreach (var word in messageContentWithoutWakeWord.Split(' '))
             {
@@ -159,8 +164,7 @@ public class Bird : InteractionModuleBase<SocketInteractionContext>
 
             if (emojiToReact != null)
             {
-                var messages = await message.Channel.GetMessagesAsync(message.Id, Direction.Before, 4).FlattenAsync();
-                await messages.First((x) => !x.Author.IsBot).AddReactionAsync(emojiToReact);
+                await (await GetMessageToActOnForWakeWord(message)).AddReactionAsync(emojiToReact);
             }
         }
 
@@ -201,6 +205,20 @@ public class Bird : InteractionModuleBase<SocketInteractionContext>
         if (message.Content.ToLower().Contains("car"))
         {
             // await message.AddReactionAsync(new Emoji("\uD83D\uDCA9"));
+        }
+
+        if (message.Content.Contains("bird", StringComparison.CurrentCultureIgnoreCase) && message.Content.Contains("kill this", StringComparison.CurrentCultureIgnoreCase))
+        {
+            string deathMessage = mcDeaths[random.Next(mcDeaths.Length)];
+
+            IMessage toActOn = await GetMessageToActOnForWakeWord(message);
+            
+            deathMessage = deathMessage.Replace("<player>", toActOn.Author.Mention);
+            deathMessage = deathMessage.Replace("<entity>", toActOn.Author.Mention);
+            deathMessage = deathMessage.Replace("<player/mob>", message.Author.Mention);
+            deathMessage = deathMessage.Replace("<item>", "bird");
+            
+            await message.Channel.SendMessageAsync(deathMessage);
         }
     }
 
