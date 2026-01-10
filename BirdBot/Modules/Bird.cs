@@ -31,8 +31,12 @@ public class Bird : InteractionModuleBase<SocketInteractionContext>
 
     private static bool isInitialized = false;
 
-    private static async Task<IMessage> GetMessageToActOnForWakeWord(IMessage message) => 
-        (await message.Channel.GetMessagesAsync(message.Id, Direction.Before, 4).FlattenAsync()).First((x) => !x.Author.IsBot);
+    private static async Task<IMessage> GetMessageToActOnForWakeWord(IMessage message)
+    {
+        var refMessage = message.Reference?.MessageId.ToNullable();
+        if (refMessage.HasValue) return await message.Channel.GetMessageAsync(refMessage.Value); 
+        return (await message.Channel.GetMessagesAsync(message.Id, Direction.Before, 4).FlattenAsync()).First((x) => !x.Author.IsBot);
+    }
 
     public Bird(DiscordSocketClient client, IConfiguration config, BirdDbContext db)
     {
@@ -49,7 +53,7 @@ public class Bird : InteractionModuleBase<SocketInteractionContext>
         if (!string.IsNullOrEmpty(config.GetValue<string>("BirdsPath")))
         {
             var birdsBasePath = config.GetValue<string>("BirdsPath");
-            birds = Directory.GetFiles(birdsBasePath).Select(x => Path.Combine(birdsBasePath, x)).ToArray();
+            //birds = Directory.GetFiles(birdsBasePath).Select(x => Path.Combine(birdsBasePath, x)).ToArray();
         }
     }
 
