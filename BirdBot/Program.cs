@@ -50,7 +50,11 @@ public class Program
         await _client.LoginAsync(TokenType.Bot, _config.GetValue<string>("Token"));
         await _handler.AddModulesAsync(Assembly.GetEntryAssembly(), _services); // Add modules
         _client.InteractionCreated += HandleInteraction; // add interaction handler
+        Directory.CreateDirectory(_config.GetValue<string>("ytdlpPath"));
+        Directory.CreateDirectory(GetYTDLPTempFolder);
+        await YoutubeDLSharp.Utils.DownloadBinaries(directoryPath:_config.GetValue<string>("ytdlpPath"));
         await _client.StartAsync();
+        
 
         Ravioli.RavioliRavioliWhatsInThePocketoli(_client);
         await Task.Delay(Timeout.Infinite);
@@ -156,4 +160,6 @@ public class Program
             }
         }
     }
+
+    public static string GetYTDLPTempFolder => Path.Combine(Path.GetTempPath(), "bird-ytdlp");
 }

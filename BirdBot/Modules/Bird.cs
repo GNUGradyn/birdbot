@@ -7,6 +7,7 @@ using Goatbot.Data.Models;
 using Goatbot.Extensions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
+using YoutubeDLSharp;
 
 namespace Goatbot.Modules;
 
@@ -231,6 +232,36 @@ public class Bird : InteractionModuleBase<SocketInteractionContext>
     {
         var bird = random.Next(birds.Length);
         await RespondWithFileAsync(birds[bird]);
+    }
+
+    [SlashCommand("ytdl", "Download and send a youtube video")]
+
+    public async Task YTDLAsync(string link)
+    {
+        await DeferAsync();
+        var ytdl = new YoutubeDL();
+        ytdl.YoutubeDLPath = Path.Combine(_config.GetValue<string>("ytdlpPath"), "yt-dlp");
+        ytdl.FFmpegPath = Path.Combine(_config.GetValue<string>("ytdlpPath"), "ffmpeg");
+        ytdl.OutputFolder = Program.GetYTDLPTempFolder;
+        RunResult<string>? downloadResult = null;
+        try
+        {
+            downloadResult = await ytdl.RunVideoDownload(url: link);
+            await FollowupWithFileAsync(downloadResult.Data);
+        }
+        catch (ArgumentException ex)
+        {
+            await FollowupAsync("uhhhhh... link bad");
+        }
+        catch (Exception ex)
+        {
+            await FollowupAsync("That didnt work... Heres the error: \n " + ex.Message);
+        }
+        finally
+        {
+            File.Delete(downloadResult.Data);
+        }
+        
     }
 
     [SlashCommand("g", "g")]
