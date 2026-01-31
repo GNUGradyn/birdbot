@@ -252,6 +252,7 @@ public class Bird : InteractionModuleBase<SocketInteractionContext>
         catch (ArgumentException ex)
         {
             await FollowupAsync("uhhhhh... link bad");
+            throw ex;
         }
         catch (Exception ex)
         {
@@ -259,7 +260,10 @@ public class Bird : InteractionModuleBase<SocketInteractionContext>
         }
         finally
         {
-            File.Delete(downloadResult.Data);
+            if (downloadResult is not null)
+            {
+                File.Delete(downloadResult.Data);
+            }
         }
         
     }
