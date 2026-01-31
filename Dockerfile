@@ -20,6 +20,7 @@ RUN dotnet publish -c Release -o out
 # Build runtime image
 FROM mcr.microsoft.com/dotnet/aspnet:8.0
 COPY --from=build-env /ai /ai
+ENV PATH="/python/bin:$PATH"
 WORKDIR /birdbot
 COPY --from=build-env /birdbot/out .
 # copy the python environment we've prepared
