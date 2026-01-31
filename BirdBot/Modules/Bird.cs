@@ -256,7 +256,7 @@ public class Bird : InteractionModuleBase<SocketInteractionContext>
         // }
         catch (Exception ex)
         {
-            await FollowupAsync("That didnt work... Heres the error: \n " + ex.Message);
+            await FollowupAsync($"That didnt work... Heres the error: \n {ex.Message} \n {ex.StackTrace}");
         }
         finally
         {
