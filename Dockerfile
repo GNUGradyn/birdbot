@@ -16,5 +16,5 @@ ENV PATH="/python/bin:$PATH"
 WORKDIR /birdbot
 COPY --from=build-env /birdbot/out .
 RUN apt update
-RUN apt install python3
+RUN apt install python3 -y
 ENTRYPOINT ["dotnet", "BirdBot.dll"]
