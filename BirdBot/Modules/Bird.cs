@@ -249,11 +249,6 @@ public class Bird : InteractionModuleBase<SocketInteractionContext>
             downloadResult = await ytdl.RunVideoDownload(url: link);
             await FollowupWithFileAsync(downloadResult.Data);
         }
-        // catch (ArgumentException ex)
-        // {
-        //     await FollowupAsync("uhhhhh... link bad");
-        //     throw ex;
-        // }
         catch (Exception ex)
         {
             await FollowupAsync($"That didnt work... Heres the error: \n {ex.Message} \n {ex.StackTrace}");
