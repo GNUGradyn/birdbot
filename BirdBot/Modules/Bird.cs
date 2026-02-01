@@ -244,9 +244,14 @@ public class Bird : InteractionModuleBase<SocketInteractionContext>
         ytdl.FFmpegPath = Path.Combine(_config.GetValue<string>("ytdlpPath"), "ffmpeg");
         ytdl.OutputFolder = Program.GetYTDLPTempFolder;
         RunResult<string>? downloadResult = null;
+        downloadResult = await ytdl.RunVideoDownload(url: link);
+        if (string.IsNullOrEmpty(downloadResult?.Data))
+        {
+            await FollowupAsync("That didnt work... ytdlp failed to download video, check your link?");
+            return;
+        }
         try
         {
-            downloadResult = await ytdl.RunVideoDownload(url: link);
             await FollowupWithFileAsync(downloadResult.Data);
         }
         catch (Exception ex)
@@ -255,10 +260,7 @@ public class Bird : InteractionModuleBase<SocketInteractionContext>
         }
         finally
         {
-            if (downloadResult is not null)
-            {
                 File.Delete(downloadResult.Data);
-            }
         }
         
     }
